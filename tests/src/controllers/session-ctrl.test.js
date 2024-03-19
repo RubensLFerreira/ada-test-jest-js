@@ -1,4 +1,4 @@
-// const { faker } = require("@faker-js/faker");
+const { faker } = require("@faker-js/faker");
 
 const SessionController = require("../../../src/controllers/session-ctrl");
 const Email = require('../../../src/utils/email-validator');
@@ -7,30 +7,18 @@ const SessionService = require('../../../src/services/session-service');
 
 const reqMock = {
   body: {
-    email: 'rubens@gmail.com',
-    password: 'senha123',
+    email: faker.internet.email(),
+    password: faker.internet.password(),
   },
 };
 
 const resMock = {
   status: () => {
     return {
-      json: () => { }
+      json: () => {}
     }
   }
 };
-const userMock = {
-  email: 'rubens@gmail.com',
-  password: 'senha123',
-}
-
-const userServiceMock = {
-  create: async () => userMock
-}
-
-const sessionServiceMock = {
-  generateToken: async () => 'token'
-}
 
 describe("Testando o controller de sessão", () => {
   test('Deve retornar um erro 400 quando o email é inválido', async () => {
@@ -51,9 +39,8 @@ describe("Testando o controller de sessão", () => {
 
   test('Deve retornar um erro 404 quando o usuário não existe', async () => {
     jest.spyOn(Email, 'isValid').mockImplementationOnce(() => true);
-    jest.spyOn(UserService, 'userExistsAndCheckPassword').mockImplementationOnce(() => {
-      throw { status: 404, message: 'Usuário não encontrado' };
-    });
+    reqMock.body.password = faker.internet.password();
+    jest.spyOn(UserService, 'userExistsAndCheckPassword').mockImplementationOnce(() => false);
     const resStatusSpy = jest.spyOn(resMock, 'status');
     await SessionController.create(reqMock, resMock);
     expect(resStatusSpy).toHaveBeenCalledWith(404);
@@ -72,15 +59,14 @@ describe("Testando o controller de sessão", () => {
     }
   });
 
-  // test('Deve retornar um token ao criar uma sessão', async () => {
-  //   jest.spyOn(Email, 'isValid').mockImplementationOnce(() => true);
-  //   jest.spyOn(UserService, 'userExistsAndCheckPassword').mockImplementationOnce(() => true);
-  //   jest.spyOn(SessionService, 'generateToken').mockImplementationOnce(() => 'token');
-  //   const resStatusSpy = jest.spyOn(resMock, 'status');
-  //   const resJsonSpy = jest.spyOn(resMock, 'status').mockReturnValue({ json: jest.fn() });
+  test('Deve retornar um token ao criar uma sessão', async () => {
+    jest.spyOn(Email, 'isValid').mockImplementationOnce(() => true);
+    reqMock.body.password = faker.internet.password();
+    jest.spyOn(UserService, 'userExistsAndCheckPassword').mockImplementationOnce(() => true);
+    jest.spyOn(SessionService, 'generateToken').mockImplementationOnce(() => 'token');
+    const resStatusSpy = jest.spyOn(resMock, 'status');
 
-  //   await SessionController.create(reqMock, resMock);
-  //   expect(resStatusSpy).toHaveBeenCalledWith(200);
-  //   expect(resJsonSpy).toHaveBeenCalledWith({ token: 'token' });
-  // });
+    await SessionController.create(reqMock, resMock);
+    expect(resStatusSpy).toHaveBeenCalledWith(200);
+  });
 });
