@@ -15,7 +15,7 @@ const reqMock = {
 const resMock = {
   status: () => {
     return {
-      json: () => {}
+      json: () => { }
     }
   }
 };
@@ -30,7 +30,6 @@ describe("Testando o controller de sessão", () => {
 
   test('Deve retornar um erro 400 quando a senha é inválida ou ausente', async () => {
     jest.spyOn(Email, 'isValid').mockImplementationOnce(() => true);
-
     reqMock.body.password = '';
     const resStatusSpy = jest.spyOn(resMock, 'status');
     await SessionController.create(reqMock, resMock);
@@ -46,19 +45,6 @@ describe("Testando o controller de sessão", () => {
     expect(resStatusSpy).toHaveBeenCalledWith(404);
   });
 
-  test('Deve retornar um erro 500 quando ocorrer um erro inesperado', async () => {
-    jest.spyOn(Email, 'isValid').mockImplementationOnce(() => true);
-    jest.spyOn(UserService, 'userExistsAndCheckPassword').mockImplementationOnce(() => {
-      throw new Error('Erro inesperado');
-    });
-
-    try {
-      await SessionController.create(reqMock, resMock);
-    } catch (error) {
-      expect(error.status).toBe(500);
-    }
-  });
-
   test('Deve retornar um token ao criar uma sessão', async () => {
     jest.spyOn(Email, 'isValid').mockImplementationOnce(() => true);
     reqMock.body.password = faker.internet.password();
@@ -68,5 +54,19 @@ describe("Testando o controller de sessão", () => {
 
     await SessionController.create(reqMock, resMock);
     expect(resStatusSpy).toHaveBeenCalledWith(200);
+  });
+
+  test('Deve retornar um erro 500 ao criar uma sessão', async () => {
+    jest.spyOn(Email, 'isValid').mockImplementationOnce(() => true);
+    reqMock.body.password = faker.internet.password();
+    jest.spyOn(UserService, 'userExistsAndCheckPassword').mockImplementationOnce(() => true);
+    jest.spyOn(SessionService, 'generateToken').mockImplementationOnce(() => {
+      throw new Error('Erro inesperado');
+    });
+    try {
+      await SessionController.create(reqMock, resMock);
+    } catch (error) {
+      expect(error.status).toBe(500);
+    }
   });
 });
